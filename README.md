@@ -9,7 +9,7 @@ TO-DO -> Incluir el contenido del proyecto
 ## Instalación
 TO-DO -> Instalación de la aplicación
 ```bash
-pip install 
+pip install -r requirements.txt
 ```
 
 ## Capturas

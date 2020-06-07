@@ -15,7 +15,7 @@ import os
 # Para lecturas de matrículas en window
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-#Precisión de que sea matrícula
+# Precisión de que sea matrícula
 CONF_THRESH, NMS_THRESH = 0.2, 0.2
 
 # yolov3_b.cfg #'darknet/yolov31.cfg'
@@ -33,7 +33,7 @@ def canvasInterfaceframeFotos(frame):
     lista = tkinter.Listbox(frame)
     lista.grid(row=0, column=2, padx=10)
     runButton = tkinter.Button(frame, state=DISABLED, text="Buscar Matrículas", command=lambda: ejecutar_red(
-        ruta_ima, canvasCoches, lista))  
+        ruta_ima, canvasCoches, lista))
     runButton.grid(row=1, column=1, pady=10)
     insertButton = tkinter.Button(
         frame, text="Insertar", command=lambda: abrirArchivo(canvasCoches, runButton))
@@ -132,7 +132,6 @@ def abrirArchivoVideo(runButton):
     ruta_ima = archivo.name
 
 
-
 def verVideo(ruta_video):
     video = cv2.VideoCapture(ruta_video)
     while(video.isOpened()):
@@ -147,6 +146,7 @@ def verVideo(ruta_video):
             break
 
     video.release()
+
 
 def mostrar_imagen(canvasCoches):
     global rImg
@@ -170,6 +170,7 @@ def inicalizacion():
     buttonVideo = tkinter.Button(
         frameInicio, text="Video", command=pulsaVideos)
     buttonVideo.pack(side=LEFT, ipadx=10, ipady=10)
+
 
 def pulsaFotos():
     global fotos
@@ -241,14 +242,13 @@ def ejecutar_red_2(verButton, imagen_red, lista):
         idxs = cv2.dnn.NMSBoxes(boxes, confidences, CONF_THRESH,
                                 CONF_THRESH)
 
-
         if len(idxs) > 0:
             for i in idxs.flatten():
                 (x, y) = (boxes[i][0], boxes[i][1])
                 (w, h) = (boxes[i][2], boxes[i][3])
                 crop_img = frame[y:y+h, x:x+w]
                 texto = pytesseract.image_to_string(
-                    crop_img, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 --psm 7') 
+                    crop_img, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 --psm 7')
 
                 numeros = "0123456789"
                 if (len(texto) > 6 and len(texto) < 8):
@@ -289,6 +289,7 @@ def ejecutar_red(imagen_red, canvasCoches, lista):
     layer_outputs = net.forward(ln)
 
     class_ids, confidences, b_boxes = [], [], []
+    mat = 0
     for output in layer_outputs:
         for detection in output:
             scores = detection[5:]
@@ -296,6 +297,7 @@ def ejecutar_red(imagen_red, canvasCoches, lista):
             confidence = scores[class_id]
 
             if confidence > CONF_THRESH:
+                mat = 1
                 center_x, center_y, w, h = (
                     detection[0:4] * np.array([width, height, width, height])).astype('int')
 
@@ -307,68 +309,72 @@ def ejecutar_red(imagen_red, canvasCoches, lista):
                 class_ids.append(int(class_id))
 
     # Perform non maximum suppression for the bounding boxes to filter overlapping and low confident bounding boxes
-    indices = cv2.dnn.NMSBoxes(
-        b_boxes, confidences, CONF_THRESH, NMS_THRESH).flatten().tolist()
 
-    # Draw the filtered bounding boxes with their class to the image
-    with open(NAMES, "r") as f:
-        classes = [line.strip() for line in f.readlines()]
-    color = (255, 0, 0)
-    color1 = (0, 0, 255)
-    #current_dir = os.path.dirname(os.path.realpath(__file__))
-    #model_dir = os.path.join(current_dir, 'models/svc/SVC_model.pkl')
-    #model1 = load_model('character_recognition.h5')
-    #model1 = load_model('cnn_classifier.h5')
-    #model = joblib.load(model_dir)
+    if (mat == 0):
+        lista.insert(lista.size(), "No se han encontrado")
+    else:
+        indices = cv2.dnn.NMSBoxes(
+            b_boxes, confidences, CONF_THRESH, NMS_THRESH).flatten().tolist()
 
-    for index in indices:
-        charList = []
-        x, y, w, h = b_boxes[index]
-        print(x, y, w, h)
-        crop_img = img_bn[y:y+h, x:x+w]
-        crop_img2 = img[y:y+h, x:x+w]
-        """
-        result = np.zeros(crop_img2.shape, dtype=np.uint8)
-        hsv = cv2.cvtColor(crop_img2, cv2.COLOR_BGR2HSV)
-        lower = np.array([0,0,0])
-        upper = np.array([179,100,130])
-        mask = cv2.inRange(hsv, lower, upper)
+        # Draw the filtered bounding boxes with their class to the image
+        with open(NAMES, "r") as f:
+            classes = [line.strip() for line in f.readlines()]
+        color = (255, 0, 0)
+        color1 = (0, 0, 255)
+        #current_dir = os.path.dirname(os.path.realpath(__file__))
+        #model_dir = os.path.join(current_dir, 'models/svc/SVC_model.pkl')
+        #model1 = load_model('character_recognition.h5')
+        #model1 = load_model('cnn_classifier.h5')
+        #model = joblib.load(model_dir)
 
-        # Perform morph close and merge for 3-channel ROI extraction
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-        close = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
-        extract = cv2.merge([close,close,close])
+        for index in indices:
+            charList = []
+            x, y, w, h = b_boxes[index]
+            print(x, y, w, h)
+            crop_img = img_bn[y:y+h, x:x+w]
+            crop_img2 = img[y:y+h, x:x+w]
+            """
+            result = np.zeros(crop_img2.shape, dtype=np.uint8)
+            hsv = cv2.cvtColor(crop_img2, cv2.COLOR_BGR2HSV)
+            lower = np.array([0,0,0])
+            upper = np.array([179,100,130])
+            mask = cv2.inRange(hsv, lower, upper)
 
-        # Find contours, filter using contour area, and extract using Numpy slicing
-        cnts = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-        for c in cnts:
-            x,y,w,h = cv2.boundingRect(c)
-            area = w * h
-            if area < 5000 and area > 2500:
-                cv2.rectangle(crop_img2, (x, y), (x + w, y + h), (36,255,12), 3)
-                result[y:y+h, x:x+w] = extract[y:y+h, x:x+w] 
+            # Perform morph close and merge for 3-channel ROI extraction
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+            close = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+            extract = cv2.merge([close,close,close])
 
-        # Invert image and throw into Pytesseract
-        invert = 255 - result
-        data = pytesseract.image_to_string(invert, lang='eng',config='--psm 6')
+            # Find contours, filter using contour area, and extract using Numpy slicing
+            cnts = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+            for c in cnts:
+                x,y,w,h = cv2.boundingRect(c)
+                area = w * h
+                if area < 5000 and area > 2500:
+                    cv2.rectangle(crop_img2, (x, y), (x + w, y + h), (36,255,12), 3)
+                    result[y:y+h, x:x+w] = extract[y:y+h, x:x+w] 
 
-        """
-        texto = pytesseract.image_to_string(
-            crop_img2, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 --psm 7')  # config='--psm 7'
-        print(texto)
-        if (len(texto) > 5 ):
-            lista.insert(lista.size(), texto)
+            # Invert image and throw into Pytesseract
+            invert = 255 - result
+            data = pytesseract.image_to_string(invert, lang='eng',config='--psm 6')
 
-        cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-        text = "{}: {:.4f}".format(texto,confidences[index])
-        cv2.putText(img, text, (x, y - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2)
+            """
+            texto = pytesseract.image_to_string(
+                crop_img2, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 --psm 7')  # config='--psm 7'
+            print(texto)
+            if (len(texto) > 5):
+                lista.insert(lista.size(), texto)
 
-    global nombre_img
-    nombre_img = nombre_img + 1
-    cv2.imwrite("resultado"+str(nombre_img)+".jpg", img)
-    mostrar_imagen(canvasCoches)
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+            text = "{}: {:.4f}".format(texto, confidences[index])
+            cv2.putText(img, text, (x, y - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, color1, 2)
+
+        global nombre_img
+        nombre_img = nombre_img + 1
+        cv2.imwrite("resultado"+str(nombre_img)+".jpg", img)
+        mostrar_imagen(canvasCoches)
 
 
 # MAIN
@@ -381,8 +387,10 @@ LABELS = open(NAMES).read().strip().split("\n")
 np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 net = cv2.dnn.readNetFromDarknet(CONFIG, WEIGHTS)
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA) # GPU: cv2.dnn.DNN_BACKEND_CUDA #cv2.dnn.DNN_BACKEND_OPENCV
-net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)  # GPU: cv2.dnn.DNN_TARGET_CUDA #cv2.dnn.DNN_TARGET_CPU
+# GPU: cv2.dnn.DNN_BACKEND_CUDA #cv2.dnn.DNN_BACKEND_OPENCV
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+# GPU: cv2.dnn.DNN_TARGET_CUDA #cv2.dnn.DNN_TARGET_CPU
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 ln = net.getLayerNames()
 ln = [ln[i[0]-1] for i in net.getUnconnectedOutLayers()]
 

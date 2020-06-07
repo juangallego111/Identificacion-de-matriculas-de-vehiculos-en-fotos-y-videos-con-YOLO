@@ -24,4 +24,4 @@ python Seguimiento_vehículos.py
 
 
 ![](/Aplicacion/Interfaz_fotos.PNG)
-![](/Aplicacion/Interfaz_videos.PNG)
+![](/Aplicacion/interfaz_videos.PNG)

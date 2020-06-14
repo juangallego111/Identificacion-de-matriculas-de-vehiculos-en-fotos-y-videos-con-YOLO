@@ -364,6 +364,8 @@ def ejecutar_red(imagen_red, canvasCoches, lista):
                 crop_img2, config='-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 --psm 7')  # config='--psm 7'
             print(texto)
             if (len(texto) > 5):
+                if (len(texto)==8):
+                    texto = texto[1:8]
                 lista.insert(lista.size(), texto)
 
             cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
